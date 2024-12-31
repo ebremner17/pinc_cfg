@@ -1,0 +1,75 @@
+<?php
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function pinc_cfg_form_alter(
+  array &$form,
+  FormStateInterface $form_state,
+  $form_id
+): void {
+
+  // If this is a user form, add the contained width class.
+  if (
+    $form_id == 'user_register_form' ||
+    $form_id == 'user_form' ||
+    $form_id == 'user_pass' ||
+    $form_id == 'user_login_form'
+  ) {
+
+    $form['#attributes']['class'][] = 'players-contained-width';
+  }
+
+  if ($form_id == 'user_register_form') {
+    $form['message_wrapper'] = [
+      '#type' => 'fieldset',
+      '#attributes' => [
+        'class' => ['user-register-message'],
+      ],
+      '#weight' => -10,
+    ];
+
+    $form['message_wrapper']['message'] = [
+      '#type' => 'markup',
+      '#markup' => 'Membership and access to all promotions is contingent on correct full first and last names.  No short forms please.   Information is all encrypted, private and has extremely limited access.',
+    ];
+  }
+}
+
+/**
+ * Implements hook_toolbar_alter().
+ *
+ * Remove the Manage link from the toolbar for authenticated users.
+ */
+function pinc_cfg_toolbar_alter(&$items) {
+
+  // Get the current user.
+  $current_user = \Drupal::currentUser();
+
+  // Ensure that the current user is not user1.
+  if ($current_user->id() !== 1) {
+
+    // Get the roles of the user.
+    $roles = $current_user->getRoles();
+
+    // If there is only 1 role and that first role is authenticated, remove the manage link.
+    // If there are multiple roles then we know that they will have the Manage link, we are
+    // only removing the manage link for strictly authenticated users only.
+    if (
+      count($roles) > 0 &&
+      !in_array('administrator', $roles) &&
+      !in_array('owner', $roles) &&
+      (
+        $roles[0] == 'authenticated' ||
+        in_array('floor', $roles)
+      )
+    ) {
+
+      // Remove the manage link.
+      unset($items['administration']);
+      unset($items['shortcuts']);
+    }
+  }
+}
